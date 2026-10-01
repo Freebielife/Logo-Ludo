@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>LUDOMAN — обновление metadata</title>
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      background: #07101d; color: #eef6ff; min-height: 100vh;
+    }
+    .wrap { width: min(940px, calc(100% - 28px)); margin: 30px auto 60px; }
+    .card { background: #0d1929; border: 1px solid #20334d; border-radius: 20px; padding: 22px; margin-bottom: 16px; }
+    h1 { margin: 0 0 8px; font-size: clamp(27px, 5vw, 42px); }
+    h2 { margin-top: 0; font-size: 20px; }
+    .muted { color: #9fb3cb; }
+    .hero { display: flex; gap: 22px; align-items: center; }
+    .hero img { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 3px solid #288dff; }
+    .grid { display: grid; grid-template-columns: 180px 1fr; gap: 10px 16px; }
+    .label { color:#91a8c2; }
+    code { color:#b6d8ff; word-break: break-all; }
+    .good { color:#62e6a8; }
+    .bad { color:#ff8080; }
+    .warn { color:#ffd36b; }
+    .change { border-left: 3px solid #268cff; padding-left: 14px; margin: 14px 0; }
+    .change b { display:block; margin-bottom:6px; }
+    .description { white-space: pre-wrap; line-height: 1.5; }
+    #ton-connect { min-height: 40px; }
+    #send {
+      width: 100%; border: 0; border-radius: 14px; padding: 16px;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      background: #2387ff; color:white; margin-top: 14px;
+    }
+    #send:disabled { opacity:.4; cursor:not-allowed; }
+    .status { padding: 12px 14px; border-radius: 12px; background:#091321; margin-top: 12px; line-height:1.45; }
+    .timer { font-size: 32px; font-weight:800; font-variant-numeric: tabular-nums; }
+    .small { font-size: 13px; }
+    @media(max-width:650px) {
+      .hero { align-items:flex-start; }
+      .hero img { width:90px;height:90px; }
+      .grid { grid-template-columns:1fr; }
+      .label { margin-top:8px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card hero">
+    <img src="https://raw.githubusercontent.com/Freebielife/Logo-Ludo/5a675433afa00797d62aac90227fe151ae3d282e/Logo.jpg" alt="LUDOMAN">
+    <div>
+      <h1>LUDOMAN</h1>
+      <div class="muted">Обновление on-chain metadata Jetton Master</div>
+      <div class="small muted" style="margin-top:8px">Меняются только <b>image</b> и <b>description</b>. Остальные поля сохраняются.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Контрольные параметры</h2>
+    <div class="grid">
+      <div class="label">Jetton Master</div><code>EQDbKihXMZuNfl7m7VcNrHIyYYYgCFPhccIqNN_ocNn-PBCb</code>
+      <div class="label">Разрешённый автор</div><code>EQD5p2Uq4b4KjKxMkivHMqP8verJ0Gl_Uegim0WKyRduBC2f</code>
+      <div class="label">Сеть</div><div>TON Mainnet <code>-239</code></div>
+      <div class="label">Сумма</div><div>0.05 TON</div>
+      <div class="label">Opcode</div><code>0xFADC0412 — set_content</code>
+      <div class="label">Payload hash</div><code>619aaeab9a14117b8ee0bdaebf20247e77e236c30f868022cd6d972a00dd49f3</code>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Что изменится</h2>
+    <div class="change">
+      <b>image</b>
+      <code>https://raw.githubusercontent.com/Freebielife/Logo-Ludo/5a675433afa00797d62aac90227fe151ae3d282e/Logo.jpg</code>
+    </div>
+    <div class="change">
+      <b>description</b>
+      <div class="description">LUDOMAN is a meme token built by players for players. It connects an active community, Web2 gaming culture and the world of Web3, with a focus on participation, interaction and community-driven development.</div>
+    </div>
+    <div class="muted small">name = 1000LUDOMAN, symbol = LUDOMAN, decimals = 9, social_links и cover_image остаются без изменений.</div>
+  </div>
+
+  <div class="card">
+    <h2>Подпись</h2>
+    <div id="ton-connect"></div>
+    <div id="wallet-status" class="status muted">Подключите кошелёк автора.</div>
+
+    <div style="margin-top:16px">
+      <div class="muted">Время на подтверждение после нажатия кнопки:</div>
+      <div id="timer" class="timer">10:00</div>
+      <div class="small muted">Таймер начинается только после нажатия «Подписать транзакцию». Если 10 минут истекут, ничего не произойдёт — можно нажать кнопку ещё раз и получить новый 10-минутный запрос.</div>
+    </div>
+
+    <button id="send" disabled>Подписать транзакцию</button>
+    <div id="result" class="status muted">Ничего ещё не подписано и не отправлено.</div>
+  </div>
+</div>
+
+<script>
+const MASTER = "EQDbKihXMZuNfl7m7VcNrHIyYYYgCFPhccIqNN_ocNn-PBCb";
+const EXPECTED_SIGNER = "EQD5p2Uq4b4KjKxMkivHMqP8verJ0Gl_Uegim0WKyRduBC2f";
+const EXPECTED_RAW = "0:f9a7652ae1be0a8cac4c922bc732a3fcbdeac9d0697f51e8229b458ac9176e04";
+const PAYLOAD = "te6cckECFwEAAwwAARj63AQSAAAAAAAAAAABAQMAwAICASADCAIBWAQGAUG/ffF0szjS5RjTGpm5RAgcJDWWVVNtqUWRXgW6FyJzGc8FAMAAaHR0cHM6Ly9zMy5ibHVtLmNvZGVzL2NlZTgxMDA5LTA3MTYtNDdiNS04M2IzLWE3YjVjYWI4MzQzYS85MDNiYzA3Ni1lNTc5LTQ2YjYtOTAzYi00YTEzNzVhMzMyYjIBQb9CC62Y7V6ABkvSmrEZyiN8t/t252hvuKPZSHIvr0h8ewcA1ABodHRwczovL3Jhdy5naXRodWJ1c2VyY29udGVudC5jb20vRnJlZWJpZWxpZmUvTG9nby1MdWRvLzVhNjc1NDMzYWZhMDA3OTdkNjJhYWM5MDIyN2ZlMTUxYWUzZDI4MmUvTG9nby5qcGcCASAJDgIBIAoMAUG/RUam/+G3nP3Ya609uHQxPc3i+wXmp0qn81UtlhfHnRMLABgAMTAwMExVRE9NQU4BQb9u1PlCp4SM4ssGa3ehEoxqH/jEP0OKLc4kYSup/6uLAw0AEABMVURPTUFOAgEgDxIBQb9SCN70b1odT53OZqswn0qFEwXxZvke952SPvWONPmiCRAB/gBMVURPTUFOIGlzIGEgbWVtZSB0b2tlbiBidWlsdCBieSBwbGF5ZXJzIGZvciBwbGF5ZXJzLiBJdCBjb25uZWN0cyBhbiBhY3RpdmUgY29tbXVuaXR5LCBXZWIyIGdhbWluZyBjdWx0dXJlIGFuZCB0aGUgd29ybGQgb2YgV2URAKBiMywgd2l0aCBhIGZvY3VzIG9uIHBhcnRpY2lwYXRpb24sIGludGVyYWN0aW9uIGFuZCBjb21tdW5pdHktZHJpdmVuIGRldmVsb3BtZW50LgIBIBMVAUG/OgP0vHgNIDiKCNjWW7nUte7J/UHdrlQhqAnkYlnWSPoUAAQAOQFBvwJDLEk1hl7KwMHDQMyiCcnsZ+pGXJI93C/TwheRmreWFgA8AFsiaHR0cHM6Ly90Lm1lL2x1ZG9tYW5fMTAwMCJd29DDBQ==";
+const VALID_FOR_SECONDS = 600;
+const AMOUNT_NANO = "50000000";
+
+const ui = new TON_CONNECT_UI.TonConnectUI({
+  manifestUrl: "https://freebielife.github.io/Logo-Ludo/tonconnect-manifest.json",
+  buttonRootId: "ton-connect"
+});
+
+ui.uiOptions = {
+  language: "ru"
+};
+
+const sendBtn = document.getElementById("send");
+const walletStatus = document.getElementById("wallet-status");
+const resultBox = document.getElementById("result");
+const timerEl = document.getElementById("timer");
+
+let timerHandle = null;
+let expiresAt = null;
+
+function setTimer(seconds) {
+  clearInterval(timerHandle);
+  let remain = seconds;
+  const draw = () => {
+    const m = Math.floor(remain / 60);
+    const s = remain % 60;
+    timerEl.textContent = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    if (remain <= 0) {
+      clearInterval(timerHandle);
+      timerEl.textContent = "ИСТЕКЛО";
+    }
+    remain--;
+  };
+  draw();
+  timerHandle = setInterval(draw, 1000);
+}
+
+function walletIsCorrect(wallet) {
+  if (!wallet || !wallet.account) return false;
+  return String(wallet.account.address || "").toLowerCase() === EXPECTED_RAW.toLowerCase()
+      && String(wallet.account.chain || "") === "-239";
+}
+
+ui.onStatusChange(wallet => {
+  if (!wallet) {
+    sendBtn.disabled = true;
+    walletStatus.className = "status muted";
+    walletStatus.textContent = "Подключите кошелёк автора.";
+    return;
+  }
+
+  let friendly = wallet.account.address;
+  try {
+    friendly = TON_CONNECT_UI.toUserFriendlyAddress(wallet.account.address);
+  } catch (e) {}
+
+  if (walletIsCorrect(wallet)) {
+    sendBtn.disabled = false;
+    walletStatus.className = "status good";
+    walletStatus.innerHTML = "✓ Подключён правильный author-wallet:<br><code>" + friendly + "</code>";
+  } else {
+    sendBtn.disabled = true;
+    walletStatus.className = "status bad";
+    walletStatus.innerHTML =
+      "✕ Подключён НЕ тот кошелёк или не Mainnet.<br>Подключён: <code>" +
+      friendly + "</code><br>Нужен: <code>" + EXPECTED_SIGNER + "</code>";
+  }
+});
+
+sendBtn.addEventListener("click", async () => {
+  const wallet = ui.wallet;
+  if (!walletIsCorrect(wallet)) {
+    resultBox.className = "status bad";
+    resultBox.textContent = "Подпись заблокирована: подключён не author-wallet.";
+    return;
+  }
+
+  const validUntil = Math.floor(Date.now() / 1000) + VALID_FOR_SECONDS;
+  expiresAt = validUntil;
+  setTimer(VALID_FOR_SECONDS);
+
+  resultBox.className = "status warn";
+  resultBox.innerHTML = "Запрос отправлен в кошелёк. На подтверждение — <b>10 минут</b>.";
+
+  try {
+    const response = await ui.sendTransaction({
+      validUntil,
+      network: "-239",
+      from: EXPECTED_SIGNER,
+      messages: [{
+        address: MASTER,
+        amount: AMOUNT_NANO,
+        payload: PAYLOAD
+      }]
+    });
+
+    resultBox.className = "status good";
+    resultBox.innerHTML =
+      "✓ Кошелёк принял транзакцию.<br>" +
+      "Подписанный BOC получен. Дождитесь включения транзакции в блокчейн и затем перепроверьте metadata.";
+    console.log("TON Connect result:", response);
+  } catch (e) {
+    resultBox.className = "status bad";
+    resultBox.textContent = "Транзакция не отправлена: " + (e && e.message ? e.message : String(e));
+    console.error(e);
+  }
+});
+</script>
+</body>
+</html>
